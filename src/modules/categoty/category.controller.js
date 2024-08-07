@@ -3,6 +3,7 @@ import { Category } from "../../../db/models/category.model.js"
 import { AppError } from "../../utils/appError.js"
 import { messages } from "../../utils/constant/messages.js"
 import { deleteFile } from "../../utils/file-finctions.js"
+import { SubCategory } from "../../../db/models/subcategory.model.js"
 // 1- medule built in
 // 2- I downloaded it
 // 3- I make it 
@@ -17,7 +18,7 @@ export const addCategory = async (req, res, next) => {
         return next(new AppError(messages.file.required, 400))
     }
     // check existence
-    const categoryExist = await Category.findOne() // {},null
+    const categoryExist = await Category.findOne({ name }) // {},null
     if (categoryExist) {
         return next(new AppError(messages.category.alreadyExist, 409))
     }
@@ -62,6 +63,18 @@ export const getCategories = async (req, res, next) => {
     })
 }
 
+// getSpecificCategory
+export const getSpecificCategory = async (req, res, next) => {
+    // get data from req
+    const { categoryId } = req.params
+    const category = await Category.findById(categoryId).populate([{ path: "subcategories" }])
+    category ?
+        res.status(200).json({
+            success: true,
+            data: category
+        }) : next(new AppError(messages.category.notFound, 404))
+}
+
 // update category
 export const updateCategory = async (req, res, next) => {
     // get data from req 
@@ -79,11 +92,14 @@ export const updateCategory = async (req, res, next) => {
     }
     // prepare data
     if (name) {
+        categoryExist.name = name
         categoryExist.slug = slugify(name)
     }
     // update image
     if (req.file) {
+        // delete old image
         deleteFile(categoryExist.image.path)
+        // update with new image
         categoryExist.image = { path: req.file.path }
     }
     // update to db
@@ -97,4 +113,37 @@ export const updateCategory = async (req, res, next) => {
         success: true,
         data: updatedCategory
     })
-}  
+}
+
+// deleteCategory
+export const deleteCategory = async (req, res, next) => {
+    // get data from req
+    const { categoryId } = req.params
+    // check existence
+    const categoryExist = await Category.findByIdAndDelete(categoryId)
+    if (categoryExist) {
+        deleteFile(categoryExist.image.path)
+    }
+    if (!categoryExist) {
+        return next(new AppError(messages.category.notFound, 404))
+    }
+    // find and delete related subcategories
+    const subcategories = await SubCategory.find({ category: categoryId });
+
+    //  // delete subcategory image files if they exist
+    if (subcategories.length != 0) {
+        subcategories.forEach(subcategory => {
+            if (subcategory.image && subcategory.image.path) {
+                deleteFile(subcategory.image.path)
+            }
+        });
+    }
+    // delete subcategory
+    await SubCategory.deleteMany({ category: categoryId });
+    
+    // send response
+    return res.status(200).json({
+        message: messages.category.deletedSuccessfully,
+        success: true
+    })
+}

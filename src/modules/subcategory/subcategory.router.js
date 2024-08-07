@@ -2,11 +2,12 @@
 import { Router } from "express";
 import { fileUpload } from "../../utils/multer.js";
 import { isValid } from "../../middleware/validation.js";
-import { addSubCategoryVal } from "./subcategory.validation.js";
+import { addSubCategoryVal, updateSubCategoryVal } from "./subcategory.validation.js";
 import { asyncHandler } from "../../utils/appError.js";
-import { addSubCategory, getSubcategory } from "./subcategory.controller.js";
+import { addSubCategory, deleteSubCategory, getSubcategory, updateSubCategory } from "./subcategory.controller.js";
 
 const subcategoryRouter = Router()
+// const subcategoryRouter = Router({ mergeParams: true })
 
 // // add subcategory  todo authentcation & auth
 subcategoryRouter.post('/',
@@ -16,9 +17,19 @@ subcategoryRouter.post('/',
 )
 
 // getSubcategory
-subcategoryRouter.get('/:categoryId',
+subcategoryRouter.get('/categoryId',
     asyncHandler(getSubcategory)
 )
+
+// update subcategoty todo authentcation & auth
+subcategoryRouter.put('/:subcategoryId',
+    fileUpload({ folder: "subcategory" }).single("image"),
+    isValid(updateSubCategoryVal),
+    asyncHandler(updateSubCategory)
+)
+
+// deleteSubCategory
+subcategoryRouter.delete('/:subId',asyncHandler(deleteSubCategory))
 
 
 export default subcategoryRouter

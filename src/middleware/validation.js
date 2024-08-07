@@ -4,7 +4,11 @@ import { AppError } from '../utils/appError.js'
 
 export const generalFields = {
     name: joi.string(),
-    objectId: joi.string().hex().length(24)
+    objectId: joi.string().hex().length(24),
+    email: joi.string().email().required(),
+    password: joi.string(),
+    rePassword: joi.string().valid(joi.ref('password'))
+
 }
 
 export const isValid = (schema) => {

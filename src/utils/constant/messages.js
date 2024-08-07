@@ -6,6 +6,7 @@ export const generateMessage = (entity) => ({
     failToUpdate: `fail to update ${entity}`,
     createdSuccessfully: `${entity} created successfully`,
     updatedSuccessfully: `${entity} updated successfully`,
+    deletedSuccessfully: `${entity} deleted successfully`,
 
 })
 
