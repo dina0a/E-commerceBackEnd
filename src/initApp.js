@@ -1,5 +1,7 @@
 import { connectDB } from "../db/connection.js"
+import brandRouter from "./modules/brand/brand.router.js"
 import categoryRouter from "./modules/categoty/category.router.js"
+import productRouter from "./modules/product/product.router.js"
 import subcategoryRouter from "./modules/subcategory/subcategory.router.js"
 import { globalErrorHandling } from "./utils/appError.js"
 
@@ -14,6 +16,8 @@ export const initApp = (app, express) => {
     app.use('/uploads', express.static('uploads'))
     app.use('/category', categoryRouter)
     app.use('/subcategory', subcategoryRouter)
+    app.use('/brand', brandRouter)
+    app.use('/product', productRouter)
 
     // global error
     app.use(globalErrorHandling)

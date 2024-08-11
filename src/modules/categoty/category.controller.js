@@ -4,6 +4,7 @@ import { AppError } from "../../utils/appError.js"
 import { messages } from "../../utils/constant/messages.js"
 import { deleteFile } from "../../utils/file-finctions.js"
 import { SubCategory } from "../../../db/models/subcategory.model.js"
+import { Product } from "../../../db/models/product.model.js"
 // 1- medule built in
 // 2- I downloaded it
 // 3- I make it 
@@ -116,34 +117,70 @@ export const updateCategory = async (req, res, next) => {
 }
 
 // deleteCategory
+// export const deleteCategory = async (req, res, next) => {
+//     // get data from req
+//     const { categoryId } = req.params
+//     // check existence
+//     const categoryExist = await Category.findByIdAndDelete(categoryId) // {},null
+//     if (categoryExist) {
+//         deleteFile(categoryExist.image.path)
+//     }
+//     if (!categoryExist) {
+//         return next(new AppError(messages.category.notFound, 404))
+//     }
+//     // find and delete related subcategories
+//     const subcategories = await SubCategory.find({ category: categoryId });
+
+//     //  // delete subcategory image files if they exist
+//     if (subcategories.length != 0) {
+//         subcategories.forEach(subcategory => {
+//             if (subcategory.image && subcategory.image.path) {
+//                 deleteFile(subcategory.image.path)
+//             }
+//         });
+//     }
+//     // delete subcategory
+//     await SubCategory.deleteMany({ category: categoryId });
+
+//     // send response
+//     return res.status(200).json({
+//         message: messages.category.deletedSuccessfully,
+//         success: true
+//     })
+// }
+
+// deleteCategory
 export const deleteCategory = async (req, res, next) => {
     // get data from req
     const { categoryId } = req.params
     // check existence
-    const categoryExist = await Category.findByIdAndDelete(categoryId)
-    if (categoryExist) {
-        deleteFile(categoryExist.image.path)
-    }
+    const categoryExist = await Category.findByIdAndDelete(categoryId) // {},null
     if (!categoryExist) {
         return next(new AppError(messages.category.notFound, 404))
     }
-    // find and delete related subcategories
-    const subcategories = await SubCategory.find({ category: categoryId });
 
-    //  // delete subcategory image files if they exist
-    if (subcategories.length != 0) {
-        subcategories.forEach(subcategory => {
-            if (subcategory.image && subcategory.image.path) {
-                deleteFile(subcategory.image.path)
-            }
-        });
+    // prepare ids
+    const subcategories = await SubCategory.find({ category: categoryId }).select('image')
+    const products = await Product.find({ category: categoryId }).select('mainImage subImages')
+    const subcategoryIds = subcategories.map(sub => sub._id)
+    const productIds = products.map(pro => pro._id)
+
+    // delete subcategories
+    await SubCategory.deleteMany({ _id: { $in: subcategoryIds } })
+    await Product.deleteMany({ _id: { $in: productIds } })
+
+    // delete images
+    const imagePaths = subcategories.map(sub => sub.image)
+    for (let i = 0; i < products.length; i++) {
+        imagePaths.push(products[i].mainImage)
+        imagePaths.push(...products[i].subImages)
     }
-    // delete subcategory
-    await SubCategory.deleteMany({ category: categoryId });
-    
-    // send response
+    for (let i = 0; i < imagePaths.length; i++) {
+         deleteFile(imagePaths[i])
+    }
+    // // send response
     return res.status(200).json({
         message: messages.category.deletedSuccessfully,
         success: true
     })
-}
+} // todo solve error

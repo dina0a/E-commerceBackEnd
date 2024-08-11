@@ -1,14 +1,22 @@
 // import modules
 import joi from 'joi'
 import { AppError } from '../utils/appError.js'
+import { Types } from 'mongoose'
 
+const validateObjectId = (value, helper) => {
+    const match = Types.ObjectId.isValid(value)
+    if (match) {
+        return true
+    }
+    return helper("invalid objectId")
+}
 export const generalFields = {
     name: joi.string(),
-    objectId: joi.string().hex().length(24),
+    // objectId: joi.string().hex().length(24),
     email: joi.string().email().required(),
     password: joi.string(),
-    rePassword: joi.string().valid(joi.ref('password'))
-
+    rePassword: joi.string().valid(joi.ref('password')),
+    objectId: joi.custom(validateObjectId),
 }
 
 export const isValid = (schema) => {
