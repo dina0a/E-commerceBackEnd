@@ -5,12 +5,16 @@ import { isValid } from "../../middleware/validation.js";
 import { addCategoryVal, updateCategoryVal } from "./category.validation.js";
 import { asyncHandler } from "../../utils/appError.js";
 import { addCategory, createCategoryCloud, deleteCategory, getCategories, getSpecificCategory, updateCategory } from "./category.controller.js";
+import { isAuthenticate, isAuthorized } from "../../middleware/authentication.js";
+import { roles } from "../../utils/constant/enums.js";
 
 const categoryRouter = Router()
 // categoryRouter.use('/:categoryId',subcategoryRouter) merge params
 
-// add category  todo authentcation & auth
+// add category 
 categoryRouter.post('/',
+    isAuthenticate(),
+    isAuthorized([roles.ADMIN, roles.SELLER]),
     fileUpload({ folder: 'category' }).single('image'),
     isValid(addCategoryVal),
     asyncHandler(addCategory)
@@ -18,12 +22,16 @@ categoryRouter.post('/',
 
 // add category cloud
 categoryRouter.post('/cloud',
+    isAuthenticate(),
+    isAuthorized([roles.ADMIN, roles.SELLER]),
     cloudUpload().single('image'),
     asyncHandler(createCategoryCloud)
 )
 
-// update categoty todo authentcation & auth
+// update categoty
 categoryRouter.put('/:categoryId',
+    isAuthenticate(),
+    isAuthorized([roles.ADMIN, roles.SELLER]),
     fileUpload({ folder: 'category' }).single('image'),
     isValid(updateCategoryVal),
     asyncHandler(updateCategory)
@@ -35,7 +43,10 @@ categoryRouter.get('/', asyncHandler(getCategories))
 categoryRouter.get('/:categoryId', asyncHandler(getSpecificCategory))
 
 // deleteCategory
-categoryRouter.delete('/:categoryId', asyncHandler(deleteCategory))
+categoryRouter.delete('/:categoryId',
+    isAuthenticate(),
+    isAuthorized([roles.ADMIN, roles.SELLER]),
+    asyncHandler(deleteCategory))
 
 // deleteCategoryCloud
 

@@ -4,3 +4,5 @@
 ## put product
 ## delete product
 ## اصلح اليوزر
+## applay is auth على باقي الكود
+## complete crud admin delete update get

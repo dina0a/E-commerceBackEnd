@@ -4,11 +4,15 @@ import { isValid } from "../../middleware/validation.js"
 import { createProductVal } from "./product.validation.js"
 import { asyncHandler } from "../../utils/appError.js"
 import { createProduct, getProducts } from "./product.controller.js"
+import { isAuthenticate, isAuthorized } from "../../middleware/authentication.js"
+import { roles } from "../../utils/constant/enums.js"
 
 const productRouter = Router()
 
-// add product  todo authentcation & auth
+// add product 
 productRouter.post('/',
+    isAuthenticate(),
+    isAuthorized([roles.ADMIN, roles.SELLER]),
     fileUpload({ folder: "product" }).fields([
         { name: "mainImage", maxCount: 1 },
         { name: "subImages", maxCount: 5 }

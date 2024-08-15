@@ -4,18 +4,24 @@ import { isValid } from "../../middleware/validation.js";
 import { createBrandVal, updateBrandVal } from "./brand.validation.js";
 import { asyncHandler } from "../../utils/appError.js";
 import { createBrand, updateBrand } from "./brand.controller.js";
+import { isAuthenticate, isAuthorized } from "../../middleware/authentication.js";
+import { roles } from "../../utils/constant/enums.js";
 
 const brandRouter = Router()
 
-// create brand toda authenticatio & auth
+// create brand
 brandRouter.post('/',
+    isAuthenticate(),
+    isAuthorized([roles.ADMIN, roles.SELLER]),
     fileUpload({ folder: "brand" }).single("logo"),
     isValid(createBrandVal),
     asyncHandler(createBrand)
 )
 
-// update brand toda authenticatio & auth
+// update brand
 brandRouter.put('/:brandId',
+    isAuthenticate(),
+    isAuthorized([roles.ADMIN, roles.SELLER]),
     fileUpload({ folder: "brand" }).single("logo"),
     isValid(updateBrandVal),
     asyncHandler(updateBrand)

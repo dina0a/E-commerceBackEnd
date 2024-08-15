@@ -74,7 +74,7 @@ export const login = async (req, res, next) => {
     // check password 
     const match = comparePassword({ password, hashPassword: userExist.password })
     if (!match) {
-        return next(new AppError(messages.password, 401))
+        return next(new AppError(messages.password.invalidCredentials, 401))
     }
     userExist.isActive = true
     await userExist.save()

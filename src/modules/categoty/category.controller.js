@@ -29,7 +29,8 @@ export const addCategory = async (req, res, next) => {
     const category = new Category({
         name,
         slug,
-        image: { path: req.file.path }
+        image: { path: req.file.path },
+        createdBy: req.authUser._id
     })
     // add to db 
     const createdCategory = await category.save() // {},null
@@ -67,7 +68,8 @@ export const createCategoryCloud = async (req, res, next) => {
     const category = new Category({
         name,
         slug,
-        image: { secure_url, public_id }
+        image: { secure_url, public_id },
+        createdBy: req.authUser._id
     })
     // add to db 
     const createdCategory = await category.save() // {},null
