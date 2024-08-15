@@ -16,7 +16,7 @@ const categorySchema = new Schema({
         lowercase: true,
         trim: true
     },
-    image: Object,
+    image: Object, // or {secure_url : String, public_id : String}
     createdBy: {
         type: Schema.Types.ObjectId,
         ref: "User",

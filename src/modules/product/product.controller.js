@@ -5,6 +5,7 @@ import { SubCategory } from "../../../db/models/subcategory.model.js"
 import { AppError } from "../../utils/appError.js"
 import { messages } from "../../utils/constant/messages.js"
 import { Product } from "../../../db/models/product.model.js"
+import { ApiFeature } from "../../utils/apiFeature.js"
 
 
 // createProduct
@@ -93,22 +94,8 @@ export const createProduct = async (req, res, next) => {
     sort('-price') reverse
 */
 export const getProducts = async (req, res, next) => {
-    let { page, size, sort, select, ...filter } = req.query
-    // price:{$gt:7000} price < 7000
-    // let filter = { ...req.query }
-    // let excludes = ['sort', 'select', 'page', 'size']
-    // excludes.forEach((ele) => {
-    //     delete filter[ele]
-    // })
-    filter = JSON.parse(JSON.stringify(filter).replace(/gt|gte|lt|lte/g, match => `$${match}`))
-    select = select?.replaceAll(',', ' ')
-    sort = sort?.replaceAll(',', ' ')
-    page = parseInt(page)
-    size = parseInt(size)
-    if (page <= 0) page = 1
-    if (size <= 0) size = 2
-    const skip = (page - 1) * size
-    const products = await Product.find(filter).limit(size).skip(skip).sort(sort).select(select)
+    const apiFeature = new ApiFeature(Product.find(), req.query).pagination().sort().select().filter()
+    const products = await apiFeature.mongooseQuery 
     // send response
     return res.status(201).json({
         success: true,

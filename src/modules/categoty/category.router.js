@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { fileUpload } from "../../utils/multer.js";
+import { cloudUpload } from "../../utils/multer.cloud.js";
 import { isValid } from "../../middleware/validation.js";
 import { addCategoryVal, updateCategoryVal } from "./category.validation.js";
 import { asyncHandler } from "../../utils/appError.js";
-import { addCategory, deleteCategory, getCategories, getSpecificCategory, updateCategory } from "./category.controller.js";
+import { addCategory, createCategoryCloud, deleteCategory, getCategories, getSpecificCategory, updateCategory } from "./category.controller.js";
 
 const categoryRouter = Router()
 // categoryRouter.use('/:categoryId',subcategoryRouter) merge params
@@ -14,6 +15,13 @@ categoryRouter.post('/',
     isValid(addCategoryVal),
     asyncHandler(addCategory)
 )
+
+// add category cloud
+categoryRouter.post('/cloud',
+    cloudUpload().single('image'),
+    asyncHandler(createCategoryCloud)
+)
+
 // update categoty todo authentcation & auth
 categoryRouter.put('/:categoryId',
     fileUpload({ folder: 'category' }).single('image'),
@@ -21,13 +29,15 @@ categoryRouter.put('/:categoryId',
     asyncHandler(updateCategory)
 )
 // get all categories
-categoryRouter.get('/',asyncHandler(getCategories))
+categoryRouter.get('/', asyncHandler(getCategories))
 
 // getSpecificCategory
-categoryRouter.get('/:categoryId',asyncHandler(getSpecificCategory))
+categoryRouter.get('/:categoryId', asyncHandler(getSpecificCategory))
 
 // deleteCategory
-categoryRouter.delete('/:categoryId',asyncHandler(deleteCategory))
+categoryRouter.delete('/:categoryId', asyncHandler(deleteCategory))
+
+// deleteCategoryCloud
 
 
 export default categoryRouter
