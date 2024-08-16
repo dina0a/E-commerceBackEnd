@@ -67,7 +67,7 @@ export const login = async (req, res, next) => {
     // get data from req
     const { email, phone, password } = req.body
     // chex existence
-    const userExist = await User.findOne({ $or: [{ email }, { phone }] })
+    const userExist = await User.findOne({ $or: [{ email }, { phone }], status: status.VERIFIED })
     if (!userExist) {
         return next(new AppError(messages.user.notFound, 404))
     }

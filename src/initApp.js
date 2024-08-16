@@ -5,6 +5,7 @@ import brandRouter from "./modules/brand/brand.router.js"
 import categoryRouter from "./modules/categoty/category.router.js"
 import productRouter from "./modules/product/product.router.js"
 import subcategoryRouter from "./modules/subcategory/subcategory.router.js"
+import wishlistRouter from "./modules/wishlist/wishlist.router.js"
 import { globalErrorHandling } from "./utils/appError.js"
 
 export const initApp = (app, express) => {
@@ -22,6 +23,7 @@ export const initApp = (app, express) => {
     app.use('/product', productRouter)
     app.use('/auth', authRouter)
     app.use('/admin', adminRouter)
+    app.use('/wishlist', wishlistRouter)
 
     // global error
     app.use(globalErrorHandling)
