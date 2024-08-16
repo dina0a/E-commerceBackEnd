@@ -4,6 +4,8 @@ import { SubCategory } from "../../../db/models/subcategory.model.js"
 import { AppError } from "../../utils/appError.js"
 import { messages } from "../../utils/constant/messages.js"
 import { deleteFile } from "../../utils/file-finctions.js"
+import { ApiFeature } from "../../utils/apiFeature.js"
+import { Product } from "../../../db/models/product.model.js"
 
 // add subcategory 
 export const addSubCategory = async (req, res, next) => {
@@ -29,7 +31,8 @@ export const addSubCategory = async (req, res, next) => {
         name,
         slug,
         category,
-        image: { path: req.file.path }
+        image: { path: req.file.path },
+        createdBy: req.authUser._id
     })
     // add to db 
     const subcategoryCreated = await subCategory.save()
@@ -48,7 +51,8 @@ export const addSubCategory = async (req, res, next) => {
 // getSubcategory
 export const getSubcategory = async (req, res, next) => {
     const { categoryId } = req.params
-    const subcategories = await SubCategory.find({ category: categoryId }).populate([{ path: "category" }]) // [{}], []
+    const apiFeature = new ApiFeature(SubCategory.find({ category: categoryId }).populate([{ path: "category" }]), req.query).pagination().sort().select().filter()
+    const subcategories = await apiFeature.mongooseQuery
     if (subcategories.length == 0) {
         return next(new AppError(messages.subCategory.notFound, 404))
     }
@@ -110,6 +114,29 @@ export const deleteSubCategory = async (req, res, next) => {
     }
     if (!subcategoryExist) {
         return next(new AppError(messages.subCategory.notFound, 404))
+    }
+    // prepare ids
+    const products = await Product.find({ subcategory: subId }).select(["mainImage", "subImages"])
+    const productIds = products.map(product => product._id) // [id1 , id2 , id3]
+
+    // delete products
+    await Product.deleteMany({ _id: { $in: productIds } });
+
+    // Delete images of products
+    products.forEach(product => {
+        if (product.mainImage) {
+            deleteFile(product.mainImage);
+        }
+        product.subImages.forEach(image => {
+            if (image) {
+                deleteFile(image);
+            }
+        });
+    });
+    // delete subcategory
+    const deletedSubCategory = await subcategoryExist.deleteOne()
+    if (!deletedSubCategory) {
+        return next(new AppError(messages.subCategory.failToCreate))
     }
     // send response
     return res.status(200).json({

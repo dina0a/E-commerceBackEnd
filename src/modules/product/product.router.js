@@ -24,5 +24,17 @@ productRouter.post('/',
 // get product
 productRouter.get('/',asyncHandler(getProducts))
 
+// add product 
+productRouter.put('/:productId',
+    isAuthenticate(),
+    isAuthorized([roles.ADMIN, roles.SELLER]),
+    fileUpload({ folder: "product" }).fields([
+        { name: "mainImage", maxCount: 1 },
+        { name: "subImages", maxCount: 5 }
+    ]),
+    isValid(createProductVal), // complete from here
+    asyncHandler(createProduct)
+)
+
 export default productRouter
 

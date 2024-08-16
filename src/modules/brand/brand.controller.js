@@ -1,4 +1,6 @@
 import { Brand } from "../../../db/models/brand.model.js"
+import { Product } from "../../../db/models/product.model.js"
+import { ApiFeature } from "../../utils/apiFeature.js"
 import { AppError } from "../../utils/appError.js"
 import { messages } from "../../utils/constant/messages.js"
 import { deleteFile } from "../../utils/file-finctions.js"
@@ -24,6 +26,7 @@ export const createBrand = async (req, res, next) => {
         name,
         logo: req.file.path,
         // todo createdBy from token 
+        createdBy: req.authUser._id
     })
     const createdBrand = await brand.save()
     if (!createdBrand) {
@@ -78,3 +81,46 @@ export const updateBrand = async (req, res, next) => {
         data: updatedBrand
     })
 }
+
+// get brand
+export const getBrand = async (req, res, next) => {
+    const apiFeature = new ApiFeature(Brand.find().populate([{ path: 'products' }]), req.query).pagination().sort().select().filter()
+    const brands = await apiFeature.mongooseQuery
+    // send response
+    return res.status(200).json({
+        success: true,
+        data: brands
+    })
+}
+
+// deleteBrand
+export const deleteBrand = async (req, res, next) => {
+    // get data from req
+    const { brandId } = req.params;
+    const brandExist = await Brand.findById(brandId);
+    if (brandExist?.logo) {
+        deleteFile(brandExist.logo);
+    }
+    if (!brandExist) {
+        return next(new AppError(messages.brand.notFound, 404));
+    }
+    const products = await Product.find({ brand: brandId }).select(["mainImage", "subImages"]);
+    const productIds = products.map(product => product._id); // [id1 , id2 , id3]
+    await Product.deleteMany({ _id: { $in: productIds } });
+    // Delete images of products
+    products.forEach(product => {
+        if (product.mainImage) {
+            deleteFile(product.mainImage);
+        }
+        product.subImages.forEach(image => {
+            if (image) {
+                deleteFile(image);
+            }
+        });
+    });
+    await brandExist.deleteOne();
+    return res.status(200).json({
+        message: messages.brand.deletedSuccessfully,
+        success: true
+    });
+};

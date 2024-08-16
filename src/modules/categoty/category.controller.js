@@ -6,6 +6,7 @@ import { deleteFile } from "../../utils/file-finctions.js"
 import { SubCategory } from "../../../db/models/subcategory.model.js"
 import { Product } from "../../../db/models/product.model.js"
 import cloudinary from "../../utils/cloudinary.js"
+import { ApiFeature } from "../../utils/apiFeature.js"
 // 1- medule built in
 // 2- I downloaded it
 // 3- I make it 
@@ -86,18 +87,8 @@ export const createCategoryCloud = async (req, res, next) => {
 
 // get categories
 export const getCategories = async (req, res, next) => {
-    const categories = await Category.find().populate([{ path: "subcategories" }])
-    // const categories = await Category.aggregate([
-    //     {
-    //         $lookup: {
-    //             from: "subcategories",
-    //             localField: "_id",
-    //             foreignField: "category",
-    //             as: "suncategories"
-    //         }
-    //     }
-    // ])
-    // send response
+    const apiFeature = new ApiFeature(Category.find().populate([{ path: "subcategories" }]), req.query).pagination().sort().select().filter()
+    const categories = await apiFeature.mongooseQuery
     return res.status(200).json({
         success: true,
         data: categories
@@ -156,74 +147,56 @@ export const updateCategory = async (req, res, next) => {
     })
 }
 
-// deleteCategory
-// export const deleteCategory = async (req, res, next) => {
-//     // get data from req
-//     const { categoryId } = req.params
-//     // check existence
-//     const categoryExist = await Category.findByIdAndDelete(categoryId) // {},null
-//     if (categoryExist) {
-//         deleteFile(categoryExist.image.path)
-//     }
-//     if (!categoryExist) {
-//         return next(new AppError(messages.category.notFound, 404))
-//     }
-//     // find and delete related subcategories
-//     const subcategories = await SubCategory.find({ category: categoryId });
-
-//     //  // delete subcategory image files if they exist
-//     if (subcategories.length != 0) {
-//         subcategories.forEach(subcategory => {
-//             if (subcategory.image && subcategory.image.path) {
-//                 deleteFile(subcategory.image.path)
-//             }
-//         });
-//     }
-//     // delete subcategory
-//     await SubCategory.deleteMany({ category: categoryId });
-
-//     // send response
-//     return res.status(200).json({
-//         message: messages.category.deletedSuccessfully,
-//         success: true
-//     })
-// }
 
 // deleteCategory
 export const deleteCategory = async (req, res, next) => {
     // get data from req
     const { categoryId } = req.params
-    // check existence
-    const categoryExist = await Category.findByIdAndDelete(categoryId) // {},null
+    // check category existance
+    const categoryExist = await Category.findById(categoryId)
     if (!categoryExist) {
         return next(new AppError(messages.category.notFound, 404))
     }
-
     // prepare ids
-    const subcategories = await SubCategory.find({ category: categoryId }).select('image')
-    const products = await Product.find({ category: categoryId }).select('mainImage subImages')
-    const subcategoryIds = subcategories.map(sub => sub._id)
-    const productIds = products.map(pro => pro._id)
+    const subcategories = await SubCategory.find({ category: categoryId }).select("image")
+    const products = await Product.find({ category: categoryId }).select(["mainImage", "subImages"])
+    const subcategoriesIds = subcategories.map(sub => sub._id) // [id1 , id2 , id3]
+    const productIds = products.map(product => product._id) // [id1 , id2 , id3]
 
-    // delete subcategories
-    await SubCategory.deleteMany({ _id: { $in: subcategoryIds } })
-    await Product.deleteMany({ _id: { $in: productIds } })
+    // delete subCategories
+    await SubCategory.deleteMany({ _id: { $in: subcategoriesIds } });
 
-    // delete images
-    const imagePaths = subcategories.map(sub => sub.image)
-    for (let i = 0; i < products.length; i++) {
-        imagePaths.push(products[i].mainImage)
-        imagePaths.push(...products[i].subImages)
-    }
-    for (let i = 0; i < imagePaths.length; i++) {
-        deleteFile(imagePaths[i])
+    // delete products
+    await Product.deleteMany({ _id: { $in: productIds } });
+
+    // Delete images of subcategories
+    subcategories.forEach(subcategory => {
+        deleteFile(subcategory.image.path);
+    });
+    // Delete images of products
+    products.forEach(product => {
+        if (product.mainImage) {
+            deleteFile(product.mainImage);
+        }
+        product.subImages.forEach(image => {
+            if (image) {
+                deleteFile(image);
+            }
+        });
+    });
+    // delete category image
+    deleteFile(categoryExist.image.path)
+    // delete category
+    const deletedCategory = await categoryExist.deleteOne()
+    if (!deletedCategory) {
+        return next(new AppError(messages.category.failToDelete))
     }
     // // send response
     return res.status(200).json({
         message: messages.category.deletedSuccessfully,
         success: true
     })
-} // todo solve error
+}
 
 // delete category cloud
 export const deleteCategoryCloud = async (req, res, next) => {

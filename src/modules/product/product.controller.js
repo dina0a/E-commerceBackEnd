@@ -6,10 +6,22 @@ import { AppError } from "../../utils/appError.js"
 import { messages } from "../../utils/constant/messages.js"
 import { Product } from "../../../db/models/product.model.js"
 import { ApiFeature } from "../../utils/apiFeature.js"
+import { deleteFile } from "../../utils/file-finctions.js"
 
 
 // createProduct
 export const createProduct = async (req, res, next) => {
+    const deleteImage = () => {
+        // delete image
+        if (req.files?.mainImage) {
+            deleteFile(req.files.mainImage[0].path);
+        }
+        if (req.files?.subImages) {
+            req.files.subImages.forEach(img => {
+                deleteFile(img.path);
+            });
+        }
+    }
     // get data from req
     const { title, description, category,
         subcategory, brand, price, discount,
@@ -18,16 +30,19 @@ export const createProduct = async (req, res, next) => {
     // check category existence
     const categoryExist = await Category.findById(category) // {},null
     if (!categoryExist) {
+        deleteImage()
         return next(new AppError(messages.category.notFound, 404))
     }
     // check subcategory existence
     const subcategoryExist = await SubCategory.findById(subcategory) // {},null
     if (!subcategoryExist) {
+        deleteImage()
         return next(new AppError(messages.subCategory.notFound, 404))
     }
     // check brand existence
     const brandExist = await Brand.findById(brand) // {},null
     if (!brandExist) {
+        deleteImage()
         return next(new AppError(messages.brand.notFound, 404))
     }
     // prepare data
@@ -45,11 +60,13 @@ export const createProduct = async (req, res, next) => {
         discount,
         size: JSON.parse(size),
         colors: colors, //JSON.parse(colors),
-        stock
+        stock,
+        createdBy: req.authUser._id
         // todo createdBy updatedBy
     })
     const createdProduct = await product.save()
     if (!createdProduct) {
+        deleteImage()
         return next(new AppError(messages.product.failToCreate, 500))
     }
     // send response
@@ -95,7 +112,7 @@ export const createProduct = async (req, res, next) => {
 */
 export const getProducts = async (req, res, next) => {
     const apiFeature = new ApiFeature(Product.find(), req.query).pagination().sort().select().filter()
-    const products = await apiFeature.mongooseQuery 
+    const products = await apiFeature.mongooseQuery
     // send response
     return res.status(201).json({
         success: true,
