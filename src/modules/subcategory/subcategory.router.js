@@ -25,7 +25,7 @@ subcategoryRouter.get('/:categoryId',
     asyncHandler(getSubcategory)
 )
 
-// update subcategoty todo authentcation & auth
+// update subcategoty
 subcategoryRouter.put('/:subcategoryId',
     isAuthenticate(),
     isAuthorized([roles.ADMIN, roles.SELLER]),

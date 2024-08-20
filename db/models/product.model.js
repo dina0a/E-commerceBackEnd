@@ -37,7 +37,7 @@ const productSchema = new Schema({
     createdBy: {
         type: Schema.Types.ObjectId,
         ref: "User",
-        required: true 
+        required: true
     },
     updatedBy: {
         type: Schema.Types.ObjectId,
@@ -80,6 +80,9 @@ const productSchema = new Schema({
 productSchema.virtual('finalPrice').get(function () {
     return this.price - (this.price * ((this.discount || 0) / 100))
 })
+productSchema.methods.inStock = function (quantity) {
+    return this.stock >= quantity ? true : false
+}
 
 // model
 

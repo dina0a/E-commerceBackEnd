@@ -25,3 +25,14 @@ export const createProductVal = joi.object({
     colors: joi.array().items(joi.string()),
     stock: joi.number().min(0),
 }).required()
+
+export const updateProductVal = joi.object({
+    productId :generalFields.objectId.required(),
+    title: generalFields.name,
+    description: generalFields.name,
+    price: joi.number().min(0),
+    discount: joi.number(),
+    size: joi.custom(parseArr),
+    colors: joi.array().items(joi.string()),
+    stock: joi.number().min(0),
+}).required()

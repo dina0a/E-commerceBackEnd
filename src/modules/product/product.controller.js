@@ -119,3 +119,76 @@ export const getProducts = async (req, res, next) => {
         data: products
     })
 }
+
+// updateProduct
+export const updateProduct = async (req, res, next) => {
+    // get data from req
+    const { title, description,
+        price, discount,
+        size, colors, stock, productId } = req.body
+    // check product exist
+    const productExist = await Product.findById(productId)
+    if (!productExist) {
+        return next(new AppError(messages.product.notFound, 404))
+    }
+    // prepare data
+    if (title) {
+        productExist.title = title;
+        productExist.slug = slugify(title)
+    }
+    productExist.description = description || productExist.description;
+    productExist.price = price || productExist.price;
+    productExist.discount = discount || productExist.discount;
+    productExist.size = size || productExist.size;
+    productExist.colors = colors || productExist.colors;
+    productExist.stock = stock || productExist.stock;
+    // update image
+    if (req.files?.mainImage) {
+        if (productExist.mainImage) {
+            deleteFile(productExist.mainImage); // Delete old main image
+        }
+        productExist.mainImage = req.files.mainImage[0].path; // Update with new main image path as a string
+    }
+    if (req.files?.subImages) {
+        if (productExist.subImages?.length) {
+            productExist.subImages.forEach(img => {
+                if (img) { // Ensure the path exists before attempting to delete
+                    deleteFile(img);
+                }
+            });
+        }
+        productExist.subImages = req.files.subImages.map(img => img.path); // Update with new sub-images paths as an array of strings
+    }
+    const updatedProduct = await productExist.save()
+    // send response
+    return res.status(201).json({
+        message: messages.product.updatedSuccessfully,
+        success: true,
+        data: updatedProduct
+    })
+}
+
+// deleteProduct
+export const deleteProduct = async (req, res, next) => {
+    const { productId } = req.params
+    const productExist = await Product.findById(productId)
+    if (!productExist) {
+        return next(new AppError(messages.product.notFound, 404))
+    }
+    // delete product images
+    if (productExist.mainImage) {
+        deleteFile(productExist.mainImage);
+    }
+
+    if (productExist.subImages && productExist.subImages.length > 0) {
+        productExist.subImages.forEach(img => {
+            deleteFile(img);
+        });
+    }
+    await productExist.deleteOne()
+    // send response
+    return res.status(201).json({
+        message: messages.product.deletedSuccessfully,
+        success: true,
+    })
+}

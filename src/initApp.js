@@ -1,11 +1,5 @@
 import { connectDB } from "../db/connection.js"
-import adminRouter from "./modules/admin/admin.router.js"
-import authRouter from "./modules/auth/auth.router.js"
-import brandRouter from "./modules/brand/brand.router.js"
-import categoryRouter from "./modules/categoty/category.router.js"
-import productRouter from "./modules/product/product.router.js"
-import subcategoryRouter from "./modules/subcategory/subcategory.router.js"
-import wishlistRouter from "./modules/wishlist/wishlist.router.js"
+import * as allRouters from './index.js'
 import { globalErrorHandling } from "./utils/appError.js"
 
 export const initApp = (app, express) => {
@@ -17,13 +11,18 @@ export const initApp = (app, express) => {
     //parse req
     app.use(express.json())
     app.use('/uploads', express.static('uploads'))
-    app.use('/category', categoryRouter)
-    app.use('/subcategory', subcategoryRouter)
-    app.use('/brand', brandRouter)
-    app.use('/product', productRouter)
-    app.use('/auth', authRouter)
-    app.use('/admin', adminRouter)
-    app.use('/wishlist', wishlistRouter)
+    app.use('/category', allRouters.categoryRouter)
+    app.use('/subcategory', allRouters.subcategoryRouter)
+    app.use('/brand', allRouters.brandRouter)
+    app.use('/product', allRouters.productRouter)
+    app.use('/auth', allRouters.authRouter)
+    app.use('/admin', allRouters.adminRouter)
+    app.use('/wishlist', allRouters.wishlistRouter)
+    app.use('/review', allRouters.reviewRouter)
+    app.use('/coupon', allRouters.couponRouter)
+    app.use('/cart', allRouters.cartRouter)
+    app.use('/user', allRouters.userRouter)
+    app.use('/order', allRouters.orderRouter)
 
     // global error
     app.use(globalErrorHandling)

@@ -7,6 +7,7 @@ export const generateMessage = (entity) => ({
     createdSuccessfully: `${entity} created successfully`,
     updatedSuccessfully: `${entity} updated successfully`,
     deletedSuccessfully: `${entity} deleted successfully`,
+    notAllowed: `${entity} not authorized to access this api`,
 })
 
 export const messages = {
@@ -17,5 +18,8 @@ export const messages = {
     user: { ...generateMessage("user"), verifyAccount: "account verifyed successfully" },
     file: { required: "file is required" },
     password: { invalidCredentials: "invalidCredentials" },
-    wishlist: { ...generateMessage('wishlist'), addedSuccessfully: "added successfully" }
+    wishlist: { ...generateMessage('wishlist'), addedSuccessfully: "added successfully" },
+    review: generateMessage("review"),
+    coupon: generateMessage("coupon"),
+    order: generateMessage("order")
 }

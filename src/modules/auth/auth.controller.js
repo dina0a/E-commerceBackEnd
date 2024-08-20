@@ -6,6 +6,8 @@ import { comparePassword, hashPassword } from '../../utils/hash-and-commpare.js'
 import { sendEmail } from '../../utils/email.js'
 import { generateToken, verifyToken } from '../../utils/token.js'
 import { status } from '../../utils/constant/enums.js'
+import { Cart } from '../../../db/index.js'
+import { generateOTP } from '../../utils/otp.js'
 
 // signup
 export const signup = async (req, res, next) => {
@@ -20,7 +22,7 @@ export const signup = async (req, res, next) => {
     // else if(userExist.phone == phone){}
 
     // hash password
-    // password = hashPassword({ password })
+    password = hashPassword({ password })
 
     // prepare data
     const user = new User({
@@ -51,10 +53,11 @@ export const verifyAccount = async (req, res, next) => {
     // get data from req
     const { token } = req.query
     const decoded = verifyToken({ token })
-    const user = await User.findByIdAndUpdate(decoded._id, { status: status.VERIFIED }, { new: true })
+    const user = await User.findByIdAndUpdate(decoded._id, { status: status.VERIFIED }, { new: true })//.select('-password')
     if (!user) {
         return next(new AppError(messages.user.notFound, 404))
     }
+    await Cart.create({ user: user._id, products: [] })
     // send response
     return res.status(200).json({
         message: messages.user.verifyAccount,
@@ -85,5 +88,69 @@ export const login = async (req, res, next) => {
         success: true,
         accessToken
     })
-} // hashPassword in two ways error
+}
+
+// forgetPassword
+export const forgetPassword = async (req, res, next) => {
+    // get data from req
+    const { email } = req.body
+    const userExist = await User.findOne({ email }) // {}, null
+    if (!userExist) {
+        return next(new AppError(messages.user.notFound, 404))
+    }
+    // if already have email
+    if (userExist.otp && userExist.expireDateOtp > Date.now()) {
+        return next(new AppError('you already has OTP', 400))
+    }
+    // generate otp
+    const otp = generateOTP()
+    // update user
+    userExist.otp = otp
+    userExist.expireDateOtp = Date.now() + 15 * 60 * 1000
+    // save to db
+    await userExist.save()
+    // send email
+    await sendEmail({ to: email, subject: "forget password", html: `<h1>your OTP is ${otp} </h1>` })
+    // send response
+    return res.status(200).json({
+        message: "check your email",
+        success: true,
+    })
+}
+
+export const changePassword = async (req, res, next) => {
+    // get data from password
+    const { otp, newPassword, email } = req.body
+    // check email
+    const user = await User.findOne({ email })//{}, null
+    if (!user) {
+        return next(new AppError(messages.user.notFound, 404))
+    }
+    if (user.otp != otp) {
+        return next(new AppError('invalid otp', 401))
+    }
+    if (user.expireDateOtp < Date.now()) {
+        const secondOTP = generateOTP()
+        user.otp = secondOTP
+        user.expireDateOtp = Date.now() + 5 * 60 * 1000
+        await user.save()
+        await sendEmail({ to: email, subject: "resent otp", html: `<h1>your otp is ${secondOTP}</h1>` })
+        // send response
+        return res.status(200).json({
+            message: "check your email",
+            success: true,
+        })
+    }
+    // hash new password
+    const hashedPassword = hashPassword({ password: newPassword })
+    // user.password = hashedPassword
+    // user.otp = undefined
+    // user.expireDateOtp = undefined
+    // await user.save()
+    await User.updateOne({ email }, { password: hashedPassword, $unset: { otp: "", expireDateOtp: "" } })
+    return res.status(200).json({
+        message: "password updated successfully",
+        success: true,
+    })
+}
 

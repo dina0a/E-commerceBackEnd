@@ -65,16 +65,18 @@ const userSchema = new Schema(
         wishlist: [{
             type: Schema.Types.ObjectId,
             ref: "Prduct"
-        }]
+        }],
+        otp: Number,
+        expireDateOtp: Date
     },
     {
         timestamps: true,
         toJSON: { virtuals: true },
         toObject: { virtuals: true }
     })
-// hooks
-userSchema.pre('save', function () {
-    this.password = hashPassword({ password: this.password })
-})
+// // hooks
+// userSchema.pre('save', function () {
+//     this.password = hashPassword({ password: this.password })
+// })
 // model
 export const User = model('User', userSchema)
