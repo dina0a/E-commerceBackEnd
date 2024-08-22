@@ -41,3 +41,20 @@ export const deleteFromWishlist = async (req, res, next) => {
         data: user
     })
 }
+
+// getWishlist
+export const getWishlist = async (req, res, next) => {
+    const userwishList = await User.findOne({ _id: req.authUser._id })
+    if (!userwishList) {
+        return next(new AppError(messages.user.notFound, 404))
+    }
+    if (userwishList.wishlist.length === 0) {
+        return next(new AppError("wishlist empty", 404))
+    }
+    const product = await Product.find({ _id: userwishList.wishlist.map(p => p._id) })
+    // send response 
+    return res.status(200).json({
+        success: true,
+        data: product
+    })
+}

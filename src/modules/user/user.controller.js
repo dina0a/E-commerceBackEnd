@@ -23,3 +23,37 @@ export const resetPassword = async (req, res, next) => {
         success: true
     })
 }
+
+// updateUser
+export const updateUser = async (req, res, next) => {
+    const { userName, email, phone, image, DOB, address } = req.body
+    const user = await User.findOne({ _id: req.authUser._id })
+    if (!user) {
+        return next(new AppError(messages.user.notFound, 404))
+    }
+    if (email || phone) {
+        const userExist = await User.findOne({
+            _id: { $ne: req.authUser._id },
+            $or: [
+                { email: email },
+                { phone: phone }
+            ]
+        });
+        if (userExist) {
+            return next(new AppError('Email or phone already in use', 400));
+        }
+    }
+    user.userName = userName || user.userName
+    user.email = email || user.email
+    user.phone = phone || user.phone
+    user.DOB = DOB || user.DOB
+    user.address = address || user.address
+    // Save the updated user
+    const updatedUser = await user.save();
+    // Send response
+    return res.status(200).json({
+        success: true,
+        message: messages.user.updatedSuccessfully,
+        updatedUser
+    });
+}

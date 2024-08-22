@@ -15,7 +15,9 @@ export const messages = {
     subCategory: generateMessage("subCategory"),
     brand: generateMessage("brand"),
     product: generateMessage("product"),
-    user: { ...generateMessage("user"), verifyAccount: "account verifyed successfully" },
+    user: { ...generateMessage("user"), verifyAccount: "account verifyed successfully" ,
+        notActive:"you must be active"
+     },
     file: { required: "file is required" },
     password: { invalidCredentials: "invalidCredentials" },
     wishlist: { ...generateMessage('wishlist'), addedSuccessfully: "added successfully" },

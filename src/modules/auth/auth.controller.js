@@ -118,6 +118,7 @@ export const forgetPassword = async (req, res, next) => {
     })
 }
 
+// changePassword
 export const changePassword = async (req, res, next) => {
     // get data from password
     const { otp, newPassword, email } = req.body

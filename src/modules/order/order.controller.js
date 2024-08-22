@@ -8,7 +8,7 @@ import { messages } from "../../utils/constant/messages.js"
 export const createOrder = async (req, res, next) => {
     // get data from req 
     const { address, phone, coupon, payment } = req.body
-    // chexk coupon 
+    // check coupon 
     const couponExist = await Coupon.findOne({ couponCode: coupon })
     if (!couponExist) {
         return next(new AppError(messages.coupon.notFound, 404))
@@ -30,9 +30,16 @@ export const createOrder = async (req, res, next) => {
         if (!productExist) {
             return next(new AppError(messages.product.notFound, 404))
         }
-        if (!productExist.inStock(product.quantity)) {
-            return next(new AppError('out of stock'))
+        if (product.quantity > productExist.stock) {
+            if (productExist.stock === 0) {
+                return next(new AppError(`Product ${productExist.title} is out of stock`, 400))
+            } else {
+                return next(new AppError(`Only ${productExist.stock} units of ${productExist.title} are in stock`, 400))
+            }
         }
+        // Decrease the quantity in stock
+        productExist.stock -= product.quantity;
+        await productExist.save();
         orderProducts.push({
             productId: productExist._id,
             title: productExist.title,
@@ -62,13 +69,47 @@ export const createOrder = async (req, res, next) => {
     if (!orderCreated) {
         return next(new AppError(messages.order.failToCreate))
     }
-    if (payment == 'visa') {
+    // if (payment == 'visa') {
 
+    // }
+    // send response
+    return res.status(201).json({
+        success: true,
+        message: messages.order.createdSuccessfully,
+        orderCreated
+    })
+}
+
+// getOrder
+export const getOrder = async (req, res, next) => {
+    const orders = await Order.find({ user: req.authUser._id })
+    if (orders.length === 0) {
+        return next(new AppError('no orders', 404))
     }
     // send response
-    // return res.status(201).json({
-    //     success: true,
-    //     message: messages.order.createdSuccessfully,
-    //     orderCreated
-    // })
+    return res.status(201).json({
+        success: true,
+        orders
+    })
 }
+
+// delete order
+export const deleteOrder = async (req, res, next) => {
+    // get data from req 
+    const { orderId } = req.params
+    const order = await Order.findById(orderId)
+    if (!order) {
+        return next(new AppError(messages.order.notFound, 404))
+    }
+    if (order.user.toString() !== req.authUser._id.toString()) {
+        return next(new AppError('Unauthorized access to this order', 403));
+    }
+    await order.deleteOne()
+    // send response
+    return res.status(201).json({
+        message: messages.order.deletedSuccessfully,
+        success: true
+    })
+}
+
+// todo update order
