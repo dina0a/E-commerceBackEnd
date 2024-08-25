@@ -4,7 +4,7 @@ import { globalErrorHandling } from "./utils/appError.js"
 import dotenv from 'dotenv'
 import path from 'path'
 export const initApp = (app, express) => {
-    dotenv.config({path:path.resolve('./config/.env')})    
+    dotenv.config({ path: path.resolve('./config/.env') })
     const port = process.env.PORT || 3000
 
     // connect to DB
@@ -25,7 +25,9 @@ export const initApp = (app, express) => {
     app.use('/cart', allRouters.cartRouter)
     app.use('/user', allRouters.userRouter)
     app.use('/order', allRouters.orderRouter)
-
+    app.all('*', (req, res, next) => {
+        return res.json({message:"invalid url"})
+    })
     // global error
     app.use(globalErrorHandling)
 
