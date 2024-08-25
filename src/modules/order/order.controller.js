@@ -1,3 +1,4 @@
+import Stripe from "stripe"
 import { Cart, Coupon, Order, Product } from "../../../db/index.js"
 import { AppError } from "../../utils/appError.js"
 import { orderStatus } from "../../utils/constant/enums.js"
@@ -45,7 +46,8 @@ export const createOrder = async (req, res, next) => {
             title: productExist.title,
             itemPrice: productExist.finalPrice,
             quantity: product.quantity,
-            finalPrice: product.quantity * productExist.finalPrice
+            finalPrice: product.quantity * productExist.finalPrice,
+            name: productExist.title
         })
         orderPrice += product.quantity * productExist.finalPrice
     }
@@ -69,11 +71,37 @@ export const createOrder = async (req, res, next) => {
     if (!orderCreated) {
         return next(new AppError(messages.order.failToCreate))
     }
-    // if (payment == 'visa') {
-
-    // }
+    // integrate payment gatway
+    if (payment == 'visa') {
+        const stripe = new Stripe('sk_test_51PrhZFLfxbRKaWmBzpEnKDQWxA4353S2nZvnAC3ekzGYyjz3fBVvH6aOiwm0e8BNHDs557b7QNfxG5thrZl2grkh00fguyHshg')
+        const checkout = await stripe.checkout.sessions.create({
+            success_url: "https://www.google.com",
+            cancel_url: "https://www.facebook.com",
+            payment_method_types: ['card'],
+            mode: "payment",
+            line_items: orderCreated.products.map((product) => {
+                return {
+                    price_data: {
+                        currency: 'egp',
+                        product_data: {
+                            name: product.title
+                        },
+                        unit_amount: product.itemPrice *100
+                    },
+                    quantity: product.quantity
+                }
+            })
+        })
+        // send response
+        return res.status(200).json({
+            success: true,
+            message: messages.order.createdSuccessfully,
+            orderCreated,
+            url: checkout.url
+        })
+    }
     // send response
-    return res.status(201).json({
+    return res.status(200).json({
         success: true,
         message: messages.order.createdSuccessfully,
         orderCreated

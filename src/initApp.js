@@ -1,8 +1,10 @@
 import { connectDB } from "../db/connection.js"
 import * as allRouters from './index.js'
 import { globalErrorHandling } from "./utils/appError.js"
-
+import dotenv from 'dotenv'
+import path from 'path'
 export const initApp = (app, express) => {
+    dotenv.config({path:path.resolve('./config/.env')})    
     const port = process.env.PORT || 3000
 
     // connect to DB

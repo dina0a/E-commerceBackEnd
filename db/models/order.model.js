@@ -42,7 +42,8 @@ const orderSchema = new Schema({
         required: true
     },
     orderPrice: Number,
-    finalPrice:Number
+    name: String,
+    finalPrice: Number
 }, { timestamps: true })
 
 // model
