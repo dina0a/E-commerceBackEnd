@@ -16,7 +16,7 @@ categoryRouter.post('/',
     isAuthenticate(),
     isAuthorized([roles.ADMIN, roles.SELLER]),
     fileUpload({ folder: 'category' }).single('image'),
-    // isValid(addCategoryVal),
+    isValid(addCategoryVal),
     asyncHandler(addCategory)
 )
 
