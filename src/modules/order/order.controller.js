@@ -38,8 +38,8 @@ export const createOrder = async (req, res, next) => {
                 return next(new AppError(`Only ${productExist.stock} units of ${productExist.title} are in stock`, 400))
             }
         }
-        // Decrease the quantity in stock
-        productExist.stock -= product.quantity;
+        // // Decrease the quantity in stock
+        // productExist.stock -= product.quantity;
         await productExist.save();
         orderProducts.push({
             productId: productExist._id,
@@ -79,6 +79,9 @@ export const createOrder = async (req, res, next) => {
             cancel_url: "https://www.facebook.com",
             payment_method_types: ['card'],
             mode: "payment",
+            metadata: {
+                orderId: orderCreated._id.toString()
+            },
             line_items: orderCreated.products.map((product) => {
                 return {
                     price_data: {
@@ -86,7 +89,7 @@ export const createOrder = async (req, res, next) => {
                         product_data: {
                             name: product.title
                         },
-                        unit_amount: product.itemPrice *100
+                        unit_amount: product.itemPrice * 100
                     },
                     quantity: product.quantity
                 }
