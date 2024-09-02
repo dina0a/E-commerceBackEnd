@@ -120,38 +120,56 @@ export const forgetPassword = async (req, res, next) => {
 
 // changePassword
 export const changePassword = async (req, res, next) => {
-    // get data from password
-    const { otp, newPassword, email } = req.body
-    // check email
-    const user = await User.findOne({ email })//{}, null
+    const { otp, newPassword, email } = req.body;
+
+    // Check if the user exists
+    const user = await User.findOne({ email });
     if (!user) {
-        return next(new AppError(messages.user.notFound, 404))
+        return next(new AppError(messages.user.notFound, 404));
     }
-    if (user.otp != otp) {
-        return next(new AppError('invalid otp', 401))
+
+    // Ensure OTP and newPassword are strings
+    const otpString = otp.toString();
+    const storedOtpString = user.otp ? user.otp.toString() : '';
+
+    // Check if OTP is valid
+    if (storedOtpString !== otpString) {
+        user.otpAttempts = (user.otpAttempts || 0) + 1;
+        await user.save();
+
+        // If OTP attempts exceed 3
+        if (user.otpAttempts > 3) {
+            user.otp = undefined;
+            user.expireDateOtp = undefined;
+            user.otpAttempts = undefined;
+            await user.save();
+            return next(new AppError('Maximum OTP attempts exceeded. Please request a new OTP.', 403));
+        }
+
+        return next(new AppError(`invalid otp you have only ${4 - user.otpAttempts} attemps left`, 401));
     }
+
+    // Check if OTP is expired
     if (user.expireDateOtp < Date.now()) {
-        const secondOTP = generateOTP()
-        user.otp = secondOTP
-        user.expireDateOtp = Date.now() + 5 * 60 * 1000
-        await user.save()
-        await sendEmail({ to: email, subject: "resent otp", html: `<h1>your otp is ${secondOTP}</h1>` })
-        // send response
-        return res.status(200).json({
-            message: "check your email",
-            success: true,
-        })
+        const secondOTP = generateOTP();
+        user.otp = secondOTP;
+        user.expireDateOtp = Date.now() + 5 * 60 * 1000;
+        user.otpAttempts = 0; // Reset attempts on new OTP
+
+        await user.save();
+        await sendEmail({ to: email, subject: 'Resent OTP', html: `<h1>Your new OTP is ${secondOTP}</h1>` });
+        return res.status(200).json({ message: "Check your email", success: true });
     }
-    // hash new password
-    const hashedPassword = hashPassword({ password: newPassword })
-    // user.password = hashedPassword
-    // user.otp = undefined
-    // user.expireDateOtp = undefined
-    // await user.save()
-    await User.updateOne({ email }, { password: hashedPassword, $unset: { otp: "", expireDateOtp: "" } })
-    return res.status(200).json({
-        message: "password updated successfully",
-        success: true,
-    })
-}
+
+    // Hash new password
+    const hashedPassword = hashPassword({ password: newPassword });
+
+    // Update password and reset OTP data
+    await User.updateOne(
+        { email },
+        { password: hashedPassword, $unset: { otp: "", expireDateOtp: "", otpAttempts: "" } }
+    );
+
+    return res.status(200).json({ message: 'Password updated successfully', success: true });
+};
 

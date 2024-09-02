@@ -67,7 +67,8 @@ const userSchema = new Schema(
             ref: "Prduct"
         }],
         otp: Number,
-        expireDateOtp: Date
+        expireDateOtp: Date,
+        otpAttempts: { type: Number, default: 0 }
     },
     {
         timestamps: true,
