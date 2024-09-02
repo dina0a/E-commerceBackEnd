@@ -1,4 +1,5 @@
 import { User } from "../../../db/models/user.model.js"
+import { ApiFeature } from "../../utils/apiFeature.js"
 import { AppError } from "../../utils/appError.js"
 import cloudinary from "../../utils/cloudinary.js"
 import { roles, status } from "../../utils/constant/enums.js"
@@ -48,8 +49,11 @@ export const addUser = async (req, res, next) => {
 
 // getUsers
 export const getUsers = async (req, res, next) => {
-    const users = await User.find()
-    users.map(user => user.password = undefined)
+    const apiFeatures = new ApiFeature(User.find(), req.query).pagination().sort().select("-password").filter();
+    const users = await apiFeatures.mongooseQuery;
+    if (!users) {
+        return next(new AppError(messages.user.notFound, 404))
+    }
     // send response
     return res.status(201).json({
         success: true,
@@ -79,7 +83,8 @@ export const updateUser = async (req, res, next) => {
     // Send response
     return res.status(200).json({
         message: messages.user.updatedSuccessfully,
-        success: true
+        success: true,
+        data: updatedUser
     });
 }
 

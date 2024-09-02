@@ -4,6 +4,9 @@ import { roles } from "../../utils/constant/enums.js";
 import { cloudUpload } from "../../utils/multer.cloud.js";
 import { asyncHandler } from "../../utils/appError.js";
 import { addUser, deleteUser, getUsers, updateUser } from "./admin.controller.js";
+import { isActive } from "../../middleware/isActive.js";
+import { isValid } from "../../middleware/validation.js";
+import { addUserVal } from "./admin.validation.js";
 
 const adminRouter = Router()
 
@@ -12,7 +15,8 @@ adminRouter.post('/add',
     isAuthenticate(),
     isAuthorized([roles.ADMIN, roles.SUPER_ADMIN]),
     cloudUpload().single('image'),
-    // todo isValid()
+    isActive(),
+    isValid(addUserVal),
     asyncHandler(addUser)
 )
 
@@ -20,7 +24,7 @@ adminRouter.post('/add',
 adminRouter.get('/get-users',
     isAuthenticate(),
     isAuthorized([roles.SUPER_ADMIN, roles.ADMIN]),
-    // todo isActive,
+    isActive(),
     asyncHandler(getUsers)
 )
 
@@ -28,7 +32,7 @@ adminRouter.get('/get-users',
 adminRouter.put('/update-user/:userId',
     isAuthenticate(),
     isAuthorized([roles.SUPER_ADMIN, roles.ADMIN]),
-    // todo isActive,
+    isActive(),
     asyncHandler(updateUser)
 )
 
@@ -36,7 +40,7 @@ adminRouter.put('/update-user/:userId',
 adminRouter.delete('/delete-user/:userId',
     isAuthenticate(),
     isAuthorized([roles.SUPER_ADMIN, roles.ADMIN]),
-    // todo isActive,
+    isActive(),
     asyncHandler(deleteUser)
 )
 
